@@ -1,4 +1,4 @@
-name: 'build ios-android'
+name: 'build ios-macos'
 
 on:
   workflow_call:
