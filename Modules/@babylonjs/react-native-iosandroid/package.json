@@ -1,6 +1,6 @@
 {
   "name": "@babylonjs/react-native-iosandroid",
-  "title": "React Native Babylon for iOS and Android",
+  "title": "React Native Babylon for iOS, macOS and Android",
   "version": "0.0.1",
   "description": "Babylon Native integration into React Native",
   "main": "index.ts",

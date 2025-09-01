@@ -1,0 +1,133 @@
+#import "BabylonNativeInterop.h"
+#import "BabylonNative.h"
+
+#import <React/RCTBridge+Private.h>
+#import <jsi/jsi.h>
+#include <ReactCommon/CallInvoker.h>
+
+#import <Foundation/Foundation.h>
+
+#import <memory>
+
+using namespace facebook;
+
+@interface RCTBridge (RCTTurboModule)
+- (std::shared_ptr<facebook::react::CallInvoker>)jsCallInvoker;
+@end
+
+namespace {
+    jsi::Runtime* GetJSIRuntime(RCTBridge* bridge) {
+        RCTCxxBridge* cxxBridge = reinterpret_cast<RCTCxxBridge*>(bridge);
+        return reinterpret_cast<jsi::Runtime*>(cxxBridge.runtime);
+    }
+}
+
+@implementation BabylonNativeInterop
+
++ (void)initialize:(RCTBridge*)bridge {
+    auto jsCallInvoker{ bridge.jsCallInvoker };
+    auto jsDispatcher{ [jsCallInvoker{ std::move(jsCallInvoker) }](std::function<void()> func)
+    {
+        jsCallInvoker->invokeAsync([func{ std::move(func) }]
+        {
+            func();
+        });
+    } };
+
+    BabylonNative::Initialize(*GetJSIRuntime(bridge), std::move(jsDispatcher));
+
+    [[NSNotificationCenter defaultCenter] removeObserver:self
+        name:RCTBridgeWillInvalidateModulesNotification
+        object:bridge.parentBridge];
+
+    [[NSNotificationCenter defaultCenter] addObserver:self
+        selector:@selector(onBridgeWillInvalidate:)
+        name:RCTBridgeWillInvalidateModulesNotification
+        object:bridge.parentBridge];
+}
+
+// NOTE: This happens during dev mode reload, when the JS engine is being shutdown and restarted.
++ (void)onBridgeWillInvalidate:(NSNotification*)notification
+{
+    BabylonNative::Deinitialize();
+}
+
++ (void)updateView:(MTKView*)mtkView {
+    const CGFloat scale = mtkView.layer.contentsScale;
+    const int width = static_cast<int>(mtkView.bounds.size.width * scale);
+    const int height = static_cast<int>(mtkView.bounds.size.height * scale);
+    if (width != 0 && height != 0) {
+        BabylonNative::UpdateView(mtkView, width, height);
+    }
+}
+
++ (void)updateMSAA:(NSNumber*)value {
+    BabylonNative::UpdateMSAA([value unsignedCharValue]);
+}
+
++ (void)renderView {
+    BabylonNative::RenderView();
+}
+
++ (void)resetView {
+    BabylonNative::ResetView();
+}
+
++ (void)updateXRView:(MTKView*)mtkView {
+    BabylonNative::UpdateXRView(mtkView);
+}
+
++ (bool)isXRActive {
+    return BabylonNative::IsXRActive();
+}
+
++ (void)reportMouseEvent:(MTKView*)mtkView event:(NSEvent*)event {
+    if (event.window != mtkView.window) {
+        return;
+    }
+    
+    const CGFloat scale = mtkView.layer.contentsScale;
+    const NSPoint locationInWindow = event.locationInWindow;
+    const NSPoint locationInView = [mtkView convertPoint:locationInWindow fromView:nil];
+    const uint32_t x = static_cast<uint32_t>(locationInView.x * scale);
+    const uint32_t y = static_cast<uint32_t>((mtkView.bounds.size.height - locationInView.y) * scale); // Flip Y coordinate for Metal
+    
+    uint32_t buttonId = BabylonNative::LEFT_MOUSE_BUTTON_ID;
+    
+    switch (event.type) {
+        case NSEventTypeLeftMouseDown:
+            buttonId = BabylonNative::LEFT_MOUSE_BUTTON_ID;
+            BabylonNative::SetMouseButtonState(buttonId, true, x, y);
+            break;
+        case NSEventTypeLeftMouseUp:
+            buttonId = BabylonNative::LEFT_MOUSE_BUTTON_ID;
+            BabylonNative::SetMouseButtonState(buttonId, false, x, y);
+            break;
+        case NSEventTypeRightMouseDown:
+            buttonId = BabylonNative::RIGHT_MOUSE_BUTTON_ID;
+            BabylonNative::SetMouseButtonState(buttonId, true, x, y);
+            break;
+        case NSEventTypeRightMouseUp:
+            buttonId = BabylonNative::RIGHT_MOUSE_BUTTON_ID;
+            BabylonNative::SetMouseButtonState(buttonId, false, x, y);
+            break;
+        case NSEventTypeOtherMouseDown:
+            buttonId = BabylonNative::MIDDLE_MOUSE_BUTTON_ID;
+            BabylonNative::SetMouseButtonState(buttonId, true, x, y);
+            break;
+        case NSEventTypeOtherMouseUp:
+            buttonId = BabylonNative::MIDDLE_MOUSE_BUTTON_ID;
+            BabylonNative::SetMouseButtonState(buttonId, false, x, y);
+            break;
+        case NSEventTypeMouseMoved:
+        case NSEventTypeLeftMouseDragged:
+        case NSEventTypeRightMouseDragged:
+        case NSEventTypeOtherMouseDragged:
+            BabylonNative::SetMousePosition(x, y);
+            break;
+        default:
+            break;
+    }
+}
+
+@end
