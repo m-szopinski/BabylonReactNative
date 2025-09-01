@@ -13,6 +13,9 @@ on:
         type: string
         default: '15.4'
 
+permissions:
+  contents: read
+
 jobs:
   Build:
     runs-on: macos-latest

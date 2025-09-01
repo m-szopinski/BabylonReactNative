@@ -6,6 +6,9 @@ on:
       release-version:
         required: true
         type: string
+
+permissions:
+  contents: read
 jobs:
   Build:
     runs-on: macos-latest

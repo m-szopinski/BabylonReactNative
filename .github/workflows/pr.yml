@@ -1,12 +1,43 @@
-name: PR Build
+name: CI
 on:
+  push:
+    branches:
+      - master
   pull_request:
     branches:
       - master
+
+permissions:
+  contents: read
+
 env:
   BRN_Version: '0.64'
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rn-version: ['0.64', '0.69', '0.70', '0.71']
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v2.3.3
+        with:
+          submodules: 'recursive'
+      - name: Setup Node 16
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+      - name: NPM Install (Playground)
+        run: npm install
+        working-directory: ./Apps/Playground
+      - name: NPM Install (React Native ${{ matrix.rn-version }})
+        run: npm run select ${{ matrix.rn-version }}
+        working-directory: ./Apps/Playground
+      - name: Run Tests (React Native ${{ matrix.rn-version }})
+        run: npm test
+        working-directory: ./Apps/Playground/${{ matrix.rn-version }}
+
   build-android:
     runs-on: macos-latest
     steps:

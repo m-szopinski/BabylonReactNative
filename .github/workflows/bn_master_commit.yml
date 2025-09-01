@@ -4,6 +4,9 @@ on:
   repository_dispatch:
     types: [babylonnative-master-update]
 
+permissions:
+  contents: read
+
 env:
   BRN_Version: 0.64
 
