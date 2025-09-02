@@ -61,8 +61,10 @@ set(PACKAGED_LIBS
 )
 
 foreach(packaged_lib ${PACKAGED_LIBS})
-    add_custom_command(TARGET BabylonNative POST_BUILD
-        COMMAND cp $<TARGET_FILE:${packaged_lib}> $<TARGET_FILE_DIR:BabylonNative>
-        DEPENDS ${packaged_lib}
-    )
+    if (TARGET ${packaged_lib})
+        add_custom_command(TARGET BabylonNative POST_BUILD
+            COMMAND cp $<TARGET_FILE:${packaged_lib}> $<TARGET_FILE_DIR:BabylonNative>
+            DEPENDS ${packaged_lib}
+        )
+    endif()
 endforeach()
