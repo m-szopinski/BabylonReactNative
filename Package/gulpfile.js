@@ -93,26 +93,26 @@ const buildIphoneSimulator = async () => {
 
 // macOS build functions
 const makeMacOSXCodeProj = async () => {
-  shelljs.mkdir('-p', 'macOS/Build');
-  exec(`cmake -B Build -G Xcode ${cmakeBasekitBuildDefinition} -DBUILD_RNAPP_DIR=Playground/Playground`, 'macOS');
+  shelljs.mkdir('-p', 'macos/Build');
+  exec(`cmake -B Build -G Xcode ${cmakeBasekitBuildDefinition} -DBUILD_RNAPP_DIR=Playground/Playground`, 'macos');
 };
 
 const makeMacOSXCodeProjRNTA = async () => {
-  shelljs.mkdir('-p', 'macOS/Build');
-  exec(`cmake -B Build -G Xcode ${cmakeBasekitBuildDefinition} -DBUILD_RNAPP_DIR=BRNPlayground`, 'macOS');
+  shelljs.mkdir('-p', 'macos/Build');
+  exec(`cmake -B Build -G Xcode ${cmakeBasekitBuildDefinition} -DBUILD_RNAPP_DIR=BRNPlayground`, 'macos');
 };
 
 const buildMacOSRelease = async () => {
-  exec('xcodebuild -configuration Release -project ReactNativeBabylon.xcodeproj -scheme BabylonNative build CODE_SIGNING_ALLOWED=NO', 'macOS/Build');
+  exec('xcodebuild -configuration Release -project ReactNativeBabylon.xcodeproj -scheme BabylonNative build CODE_SIGNING_ALLOWED=NO', 'macos/Build');
 };
 
 const createMacOSFrameworks = async () => {
   // Create universal libraries for macOS
-  exec('lipo -create -output libBabylonNative.a Build/Release/libBabylonNative.a', 'macOS');
+  exec('lipo -create -output libBabylonNative.a Build/Release/libBabylonNative.a', 'macos');
   
   // Copy the universal library to the libs directory
-  shelljs.mkdir('-p', `../Modules/@babylonjs/react-native-iosandroid/macos/libs/`);
-  exec('cp libBabylonNative.a ../Modules/@babylonjs/react-native-iosandroid/macos/libs/', 'macOS');
+  exec('mkdir -p ../../Modules/@babylonjs/react-native-iosandroid/macos/libs/', 'macos');
+  exec('cp libBabylonNative.a ../../Modules/@babylonjs/react-native-iosandroid/macos/libs/', 'macos');
 };
 
 
@@ -255,7 +255,7 @@ const copyMacOSFiles = async () => {
   await new Promise(resolve => {
     gulp.src('../Apps/Playground/Playground/node_modules/@babylonjs/react-native-iosandroid/macos/*.h')
       .pipe(gulp.src('../Apps/Playground/Playground/node_modules/@babylonjs/react-native-iosandroid/macos/*.mm'))
-      .pipe(gulp.src('macOS/Build/ReactNativeBabylon.xcodeproj**/**/*'))
+      .pipe(gulp.src('macos/Build/ReactNativeBabylon.xcodeproj**/**/*'))
       .pipe(gulp.dest(`${assemblediOSmacOSDir}/macos`))
       .on('end', resolve);
   });

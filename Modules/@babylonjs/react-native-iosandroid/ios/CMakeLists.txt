@@ -59,7 +59,11 @@ add_library(BabylonNative
 if (${BASEKIT_BUILD})
     target_compile_definitions(BabylonNative PRIVATE BASEKIT_BUILD=1)
 else()
-    set(ADDITIONAL_LIBRARIES NativeXr NativeCamera)
+    set(ADDITIONAL_LIBRARIES NativeCamera)
+    if (TARGET NativeXr)
+        list(APPEND ADDITIONAL_LIBRARIES NativeXr)
+        target_compile_definitions(BabylonNative PRIVATE NATIVEXR_AVAILABLE=1)
+    endif()
 endif()
 
 target_include_directories(BabylonNative PRIVATE ${SHARED_INCLUDES})
