@@ -660,6 +660,7 @@ exports.packiOSmacOS = packiOSmacOS;
 // const packUWPNoBuild = gulp.series(clean, copyPackageFilesUWP, createPackage, createPackageUWP);
 
 exports.buildTS = buildTS;
+exports.patchPackageVersion = patchPackageVersion;
 // All Windows/UWP exports removed
 
 exports.default = build;
