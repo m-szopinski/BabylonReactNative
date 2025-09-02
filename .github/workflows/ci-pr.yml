@@ -1,4 +1,4 @@
-name: CI (PR: iOS & macOS)
+name: 'CI (PR: iOS & macOS)'
 
 on:
   pull_request:
