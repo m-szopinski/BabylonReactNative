@@ -1,0 +1,177 @@
+name: CI (PR: iOS & macOS)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches:
+      - master
+  workflow_dispatch:
+
+concurrency:
+  group: pr-${{ github.event.pull_request.number || github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build (${{ matrix.platform }})
+    runs-on: macos-14
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ios, macos]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select latest Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest
+
+      - name: Discover Xcode container and scheme
+        id: discover
+        shell: bash
+        run: |
+          set -euo pipefail
+          WORKSPACE="$(/usr/bin/find . -type d -name '*.xcworkspace' -not -path '*/Pods/*' -not -path '*/node_modules/*' | head -n1 || true)"
+          PROJECT="$(/usr/bin/find . -type d -name '*.xcodeproj' -not -path '*/Pods/*' -not -path '*/node_modules/*' | head -n1 || true)"
+          if [[ -n "$WORKSPACE" ]]; then
+            CONTAINER_FLAG=( -workspace "$WORKSPACE" )
+          elif [[ -n "$PROJECT" ]]; then
+            CONTAINER_FLAG=( -project "$PROJECT" )
+          else
+            echo "No .xcworkspace or .xcodeproj found" >&2
+            exit 1
+          fi
+          LIST_OUT="$(mktemp)"
+          xcodebuild -list "${CONTAINER_FLAG[@]}" | tee "$LIST_OUT"
+          SCHEME="$(awk '/Schemes:/{flag=1;next}/^$/{flag=0}flag' "$LIST_OUT" | head -n1 | sed 's/^\s*//')"
+          if [[ -z "$SCHEME" ]]; then
+            echo "No scheme found" >&2
+            exit 1
+          fi
+          echo "container_flag=${CONTAINER_FLAG[*]}" >> "$GITHUB_OUTPUT"
+          echo "scheme=$SCHEME" >> "$GITHUB_OUTPUT"
+
+      - name: Build (${{ matrix.platform }})
+        shell: bash
+        run: |
+          set -euo pipefail
+          set -x
+          if [[ "${{ matrix.platform }}" == "ios" ]]; then
+            # Build for iOS Simulator (generic platform avoids needing a specific device)
+            eval xcodebuild ${{ steps.discover.outputs.container_flag }} \
+              -scheme "${{ steps.discover.outputs.scheme }}" \
+              -configuration Debug \
+              -destination 'generic/platform=iOS Simulator' \
+              build | tee build-${{ matrix.platform }}.log
+          else
+            eval xcodebuild ${{ steps.discover.outputs.container_flag }} \
+              -scheme "${{ steps.discover.outputs.scheme }}" \
+              -configuration Debug \
+              -destination 'platform=macOS' \
+              build | tee build-${{ matrix.platform }}.log
+          fi
+
+      - name: Upload build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs-${{ matrix.platform }}
+          path: |
+            build-${{ matrix.platform }}.log
+            ~/Library/Logs/DiagnosticReports
+
+  test:
+    name: Test (${{ matrix.platform }})
+    runs-on: macos-14
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ios, macos]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select latest Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest
+
+      - name: Discover Xcode container and scheme
+        id: discover
+        shell: bash
+        run: |
+          set -euo pipefail
+          WORKSPACE="$(/usr/bin/find . -type d -name '*.xcworkspace' -not -path '*/Pods/*' -not -path '*/node_modules/*' | head -n1 || true)"
+          PROJECT="$(/usr/bin/find . -type d -name '*.xcodeproj' -not -path '*/Pods/*' -not -path '*/node_modules/*' | head -n1 || true)"
+          if [[ -n "$WORKSPACE" ]]; then
+            CONTAINER_FLAG=( -workspace "$WORKSPACE" )
+          elif [[ -n "$PROJECT" ]]; then
+            CONTAINER_FLAG=( -project "$PROJECT" )
+          else
+            echo "No .xcworkspace or .xcodeproj found" >&2
+            exit 1
+          fi
+          LIST_OUT="$(mktemp)"
+          xcodebuild -list "${CONTAINER_FLAG[@]}" | tee "$LIST_OUT"
+          SCHEME="$(awk '/Schemes:/{flag=1;next}/^$/{flag=0}flag' "$LIST_OUT" | head -n1 | sed 's/^\s*//')"
+          if [[ -z "$SCHEME" ]]; then
+            echo "No scheme found" >&2
+            exit 1
+          fi
+          echo "container_flag=${CONTAINER_FLAG[*]}" >> "$GITHUB_OUTPUT"
+          echo "scheme=$SCHEME" >> "$GITHUB_OUTPUT"
+
+      - name: Detect tests presence
+        id: tests_detect
+        shell: bash
+        run: |
+          set -euo pipefail
+          if /usr/bin/find . -type f \( -name '*Tests.m' -o -name '*Tests.mm' -o -name '*Tests.swift' \) -not -path '*/Pods/*' -not -path '*/node_modules/*' | grep -q .; then
+            echo "has_tests=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No test sources detected. Skipping tests." >&2
+            echo "has_tests=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Pick iOS Simulator
+        id: pick_sim
+        if: matrix.platform == 'ios' && steps.tests_detect.outputs.has_tests == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Pick the first available iPhone device name
+          DEVICE_NAME=$(xcrun simctl list devices available | awk -F'[()]' '/iPhone/ {print $1; exit}' | sed 's/^ *//;s/ *$//')
+          if [[ -z "$DEVICE_NAME" ]]; then
+            DEVICE_NAME="iPhone 14"
+          fi
+          echo "device_name=$DEVICE_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Run tests (${{ matrix.platform }})
+        if: steps.tests_detect.outputs.has_tests == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          set -x
+          if [[ "${{ matrix.platform }}" == "ios" ]]; then
+            DEST="platform=iOS Simulator,name=${{ steps.pick_sim.outputs.device_name }}"
+            eval xcodebuild ${{ steps.discover.outputs.container_flag }} \
+              -scheme "${{ steps.discover.outputs.scheme }}" \
+              -configuration Debug \
+              -destination "$DEST" \
+              test | tee test-${{ matrix.platform }}.log
+          else
+            eval xcodebuild ${{ steps.discover.outputs.container_flag }} \
+              -scheme "${{ steps.discover.outputs.scheme }}" \
+              -configuration Debug \
+              -destination 'platform=macOS' \
+              test | tee test-${{ matrix.platform }}.log
+          fi
+
+      - name: Upload test logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-logs-${{ matrix.platform }}
+          path: |
+            test-${{ matrix.platform }}.log
+            ~/Library/Logs/DiagnosticReports
