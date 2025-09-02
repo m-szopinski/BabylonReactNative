@@ -60,7 +60,7 @@ jobs:
         working-directory: ./Package
 
       - name: Build (Gulp) - iOS and macOS
-        run: npx gulp buildIOS buildMacOS --reactNative 0.69 --releaseVersion ${{ github.ref_name }}
+        run: npx gulp build --reactNative 0.69 --releaseVersion ${{ github.ref_name }}
         working-directory: ./Package
         env:
           JAVA_HOME: ${{ env.JAVA_HOME_17_X64 }}
@@ -126,7 +126,7 @@ jobs:
         working-directory: ./Package
 
       - name: Build (Gulp) - iOS and macOS
-        run: npx gulp buildIOS buildMacOS --reactNative 0.70 --releaseVersion ${{ github.ref_name }}
+        run: npx gulp build --reactNative 0.70 --releaseVersion ${{ github.ref_name }}
         working-directory: ./Package
         env:
           JAVA_HOME: ${{ env.JAVA_HOME_17_X64 }}
@@ -192,7 +192,7 @@ jobs:
         working-directory: ./Package
 
       - name: Build (Gulp) - iOS and macOS
-        run: npx gulp buildIOS buildMacOS --reactNative 0.71 --releaseVersion ${{ github.ref_name }}
+        run: npx gulp build --reactNative 0.71 --releaseVersion ${{ github.ref_name }}
         working-directory: ./Package
         env:
           JAVA_HOME: ${{ env.JAVA_HOME_17_X64 }}
@@ -305,5 +305,12 @@ jobs:
 
       - name: Publish package(s)
         run: |
-          npm publish --tag latest --access public
+          # First publish the main package from Assembled directory
+          cd Assembled && npm publish --tag latest --access public
+          # Then publish the platform-specific packages
+          for dir in Assembled-*iOSmacOS*/; do
+            if [ -d "$dir" ]; then
+              cd "$dir" && npm publish --tag latest --access public && cd ..
+            fi
+          done
         working-directory: ./Package

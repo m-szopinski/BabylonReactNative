@@ -30,7 +30,7 @@
   "peerDependencies": {
     "@babylonjs/react-native": "*",
     "react": "*",
-    "react-native": "*",
+    "react-native": ">=0.69.0 <0.72.0",
     "react-native-permissions": ">=3.0.0"
   },
   "devDependencies": {

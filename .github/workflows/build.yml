@@ -57,7 +57,7 @@ jobs:
         working-directory: ./Package
 
       - name: Build (Gulp) - iOS and macOS
-        run: npx gulp buildIOS buildMacOS --reactNative 0.71 --releaseVersion 0.0.0-pr
+        run: npx gulp build --reactNative 0.71 --releaseVersion 0.0.0-pr
         working-directory: ./Package
         env:
           JAVA_HOME: ${{ env.JAVA_HOME_17_X64 }}
