@@ -1,0 +1,22 @@
+name: CI (PR)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  sanity:
+    name: PR trigger check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Print context
+        run: |
+          echo "event=${{ github.event_name }}"
+          echo "pr=${{ github.event.number }}"
+          echo "base_ref=${{ github.base_ref }}"
+          echo "head_ref=${{ github.head_ref }}"
+          echo "sha=${{ github.sha }}"
