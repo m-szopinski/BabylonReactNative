@@ -56,6 +56,7 @@ else()
     set(ADDITIONAL_LIBRARIES NativeCamera)
     if (TARGET NativeXr)
         list(APPEND ADDITIONAL_LIBRARIES NativeXr)
+        target_compile_definitions(BabylonNative PRIVATE NATIVEXR_AVAILABLE=1)
     endif()
 endif()
 
