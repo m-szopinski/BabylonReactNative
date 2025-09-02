@@ -9,7 +9,7 @@ const rename = require('gulp-rename');
 const glob = require('glob');
 const chalk = require('chalk');
 
-let assemblediOSAndroidDir = 'Assembled-iOSAndroid';
+let assemblediOSmacOSDir = 'Assembled-iOSmacOS';
 let assembledWindowsDir = 'Assembled-Windows';
 let basekitBuild = false;
 let cmakeBasekitBuildDefinition = '';
@@ -55,8 +55,8 @@ const clean = async () => {
     shelljs.rm('-r', 'Assembled');
   }
 
-  if (shelljs.test('-d', `${assemblediOSAndroidDir}`)) {
-    shelljs.rm('-r', `${assemblediOSAndroidDir}`);
+  if (shelljs.test('-d', `${assemblediOSmacOSDir}`)) {
+    shelljs.rm('-r', `${assemblediOSmacOSDir}`);
   }
 
   if (shelljs.test('-d', `${assembledWindowsDir}`)) {
@@ -89,6 +89,30 @@ const buildIphoneOS = async () => {
 
 const buildIphoneSimulator = async () => {
   exec('xcodebuild -sdk iphonesimulator -arch x86_64 -configuration Release -project ReactNativeBabylon.xcodeproj -scheme BabylonNative build CODE_SIGNING_ALLOWED=NO', 'iOS/Build');
+};
+
+// macOS build functions
+const makeMacOSXCodeProj = async () => {
+  shelljs.mkdir('-p', 'macOS/Build');
+  exec(`cmake -B Build -G Xcode ${cmakeBasekitBuildDefinition} -DBUILD_RNAPP_DIR=Playground/Playground`, 'macOS');
+};
+
+const makeMacOSXCodeProjRNTA = async () => {
+  shelljs.mkdir('-p', 'macOS/Build');
+  exec(`cmake -B Build -G Xcode ${cmakeBasekitBuildDefinition} -DBUILD_RNAPP_DIR=BRNPlayground`, 'macOS');
+};
+
+const buildMacOSRelease = async () => {
+  exec('xcodebuild -configuration Release -project ReactNativeBabylon.xcodeproj -scheme BabylonNative build CODE_SIGNING_ALLOWED=NO', 'macOS/Build');
+};
+
+const createMacOSFrameworks = async () => {
+  // Create universal libraries for macOS
+  exec('lipo -create -output libBabylonNative.a Build/Release/libBabylonNative.a', 'macOS');
+  
+  // Copy the universal library to the libs directory
+  shelljs.mkdir('-p', `../Modules/@babylonjs/react-native-iosandroid/macos/libs/`);
+  exec('cp libBabylonNative.a ../Modules/@babylonjs/react-native-iosandroid/macos/libs/', 'macOS');
 };
 
 
@@ -202,12 +226,45 @@ const copySharedFiles = () => {
     .pipe(gulp.dest('Assembled/shared'));
 };
 
-const copyIOSAndroidCommonFiles = () => {
+const copyIOSmacOSCommonFiles = () => {
   return gulp.src('../Modules/@babylonjs/react-native-iosandroid/package.json')
     .pipe(gulp.src('../Modules/@babylonjs/react-native-iosandroid/README.md'))
     .pipe(gulp.src('../NOTICE.html'))
     .pipe(gulp.src(`${basekitPackagePath}react-native-babylon.podspec`))
-    .pipe(gulp.dest(`${assemblediOSAndroidDir}/`));
+    .pipe(gulp.dest(`${assemblediOSmacOSDir}/`));
+};
+
+const copyIOSFiles = async () => {
+  await new Promise(resolve => {
+    gulp.src('../Apps/Playground/Playground/node_modules/@babylonjs/react-native-iosandroid/ios/*.h')
+      .pipe(gulp.src('../Apps/Playground/Playground/node_modules/@babylonjs/react-native-iosandroid/ios/*.mm'))
+      // This xcodeproj is garbage that we don't need in the package, but `pod install` ignores the package if it doesn't contain at least one xcodeproj. 🤷🏼‍♂️
+      .pipe(gulp.src('iOS/Build/ReactNativeBabylon.xcodeproj**/**/*'))
+      .pipe(gulp.dest(`${assemblediOSmacOSDir}/ios`))
+      .on('end', resolve);
+  });
+
+  await new Promise(resolve => {
+    gulp.src('../Package/iOS/Build/_deps/babylonnative-src/Dependencies/xr/Source/ARKit/Include/*')
+      .pipe(gulp.dest(`${assemblediOSmacOSDir}/ios/include`))
+      .on('end', resolve);
+  });
+};
+
+const copyMacOSFiles = async () => {
+  await new Promise(resolve => {
+    gulp.src('../Apps/Playground/Playground/node_modules/@babylonjs/react-native-iosandroid/macos/*.h')
+      .pipe(gulp.src('../Apps/Playground/Playground/node_modules/@babylonjs/react-native-iosandroid/macos/*.mm'))
+      .pipe(gulp.src('macOS/Build/ReactNativeBabylon.xcodeproj**/**/*'))
+      .pipe(gulp.dest(`${assemblediOSmacOSDir}/macos`))
+      .on('end', resolve);
+  });
+
+  await new Promise(resolve => {
+    gulp.src('../Modules/@babylonjs/react-native-iosandroid/macos/libs/*')
+      .pipe(gulp.dest(`${assemblediOSmacOSDir}/macos/libs`))
+      .on('end', resolve);
+  });
 };
 
 const copyIOSFiles = async () => {
@@ -228,9 +285,9 @@ const copyIOSFiles = async () => {
 };
 
 const createIOSUniversalLibs = async () => {
-  shelljs.mkdir('-p', `${assemblediOSAndroidDir}/ios/libs`);
+  shelljs.mkdir('-p', `${assemblediOSmacOSDir}/ios/libs`);
   const libs = await readdirAsync('iOS/Build/Release-iphoneos');
-  libs.map(lib => exec(`lipo -create iOS/Build/Release-iphoneos/${lib} iOS/Build/Release-iphonesimulator/${lib} -output ${assemblediOSAndroidDir}/ios/libs/${lib}`));
+  libs.map(lib => exec(`lipo -create iOS/Build/Release-iphoneos/${lib} iOS/Build/Release-iphonesimulator/${lib} -output ${assemblediOSmacOSDir}/ios/libs/${lib}`));
 };
 
 const createXCFrameworks = async () => {
@@ -265,13 +322,13 @@ const createXCFrameworks = async () => {
     const archs = PLATFORMS_MAP[platform];
     if (archs.length === 1) {
       // Copy the single arch library to the output directory
-      const outputDir = `${assemblediOSAndroidDir}/ios/libs/${platform}`;
+      const outputDir = `${assemblediOSmacOSDir}/ios/libs/${platform}`;
       shelljs.mkdir('-p', outputDir);
       exec(`cp -r iOS/Build/${platform}-${archs[0]}/*.a ${outputDir}`);
       return
     }
 
-    const outputDir = `${assemblediOSAndroidDir}/ios/libs/${platform}`; 
+    const outputDir = `${assemblediOSmacOSDir}/ios/libs/${platform}`; 
     shelljs.mkdir('-p', outputDir);
     libs.forEach(lib => {
       let params = ""
@@ -284,51 +341,52 @@ const createXCFrameworks = async () => {
 
   // Create xcframework for each library
   libs.forEach(lib => {
-    const params = Object.keys(PLATFORMS_MAP).map(platform => ` -library ${assemblediOSAndroidDir}/ios/libs/${platform}/${lib}`).join('');
-    const outputDir = `${assemblediOSAndroidDir}/ios/libs/`;
+    const params = Object.keys(PLATFORMS_MAP).map(platform => ` -library ${assemblediOSmacOSDir}/ios/libs/${platform}/${lib}`).join('');
+    const outputDir = `${assemblediOSmacOSDir}/ios/libs/`;
     const libName = lib.split('.')[0];
     exec(`xcodebuild -create-xcframework ${params} -output ${outputDir}/${libName}.xcframework`);
   });
 
   shelljs.mkdir('-p', '../Modules/@babylonjs/react-native-iosandroid/ios/libs');
-  exec(`cp -r ${assemblediOSAndroidDir}/ios/libs/*.xcframework ../Modules/@babylonjs/react-native-iosandroid/ios/libs/`);
-  exec(`rm -rf ${assemblediOSAndroidDir}/ios/libs`);
+  exec(`cp -r ${assemblediOSmacOSDir}/ios/libs/*.xcframework ../Modules/@babylonjs/react-native-iosandroid/ios/libs/`);
+  exec(`rm -rf ${assemblediOSmacOSDir}/ios/libs`);
 };
 
-const copyAndroidFiles = async () => {
-  await new Promise(resolve => {
-    gulp.src(`${basekitPackagePath}Android/build.gradle`)
-      .pipe(gulp.src('../Apps/Playground/Playground/node_modules/@babylonjs/react-native-iosandroid/android/src**/main/AndroidManifest.xml'))
-      .pipe(gulp.src('../Apps/Playground/Playground/node_modules/@babylonjs/react-native-iosandroid/android/src**/main/java/**/*'))
-      .pipe(gulp.dest(`${assemblediOSAndroidDir}/android`))
-      .on('end', resolve);
-  });
+// Android support removed - function commented out
+// const copyAndroidFiles = async () => {
+//   await new Promise(resolve => {
+//     gulp.src(`${basekitPackagePath}Android/build.gradle`)
+//       .pipe(gulp.src('../Apps/Playground/Playground/node_modules/@babylonjs/react-native-iosandroid/android/src**/main/AndroidManifest.xml'))
+//       .pipe(gulp.src('../Apps/Playground/Playground/node_modules/@babylonjs/react-native-iosandroid/android/src**/main/java/**/*'))
+//       .pipe(gulp.dest(`${assemblediOSmacOSDir}/android`))
+//       .on('end', resolve);
+//   });
 
-  await new Promise(resolve => {
-    gulp.src('../Package/iOS/Build/_deps/babylonnative-src/Dependencies/xr/Source/ARCore/Include/*')
-      .pipe(gulp.dest(`${assemblediOSAndroidDir}/android/include`))
-      .on('end', resolve);
-  });
+//   await new Promise(resolve => {
+//     gulp.src('../Package/iOS/Build/_deps/babylonnative-src/Dependencies/xr/Source/ARCore/Include/*')
+//       .pipe(gulp.dest(`${assemblediOSmacOSDir}/android/include`))
+//       .on('end', resolve);
+//   });
 
-  await new Promise(resolve => {
-    const jnidir = '../Apps/Playground/Playground/node_modules/@babylonjs/react-native-iosandroid/android/build/intermediates/library_and_local_jars_jni/release/jni/**';
-    gulp.src(`${jnidir}/libBabylonNative.so`)
-      .pipe(gulp.dest(`${assemblediOSAndroidDir}/android/src/main/jniLibs/`))
-      .on('end', resolve);
-  });
+//   await new Promise(resolve => {
+//     const jnidir = '../Apps/Playground/Playground/node_modules/@babylonjs/react-native-iosandroid/android/build/intermediates/library_and_local_jars_jni/release/jni/**';
+//     gulp.src(`${jnidir}/libBabylonNative.so`)
+//       .pipe(gulp.dest(`${assemblediOSmacOSDir}/android/src/main/jniLibs/`))
+//       .on('end', resolve);
+//   });
 
-  // This is no longer found in the directory above because it is explicitly excluded because Playground has been updated to RN 0.64 which includes
-  // the real implementation of libturbomodulejsijni.so, but we still need to support RN 0.63 consumers, so grab this one explicitly to include it in the package.
+//   // This is no longer found in the directory above because it is explicitly excluded because Playground has been updated to RN 0.64 which includes
+//   // the real implementation of libturbomodulejsijni.so, but we still need to support RN 0.63 consumers, so grab this one explicitly to include it in the package.
 
-  const versionIndex = process.argv.indexOf('--reactNative');
-  if (versionIndex != -1 && process.argv[versionIndex + 1] != '0.71') {
-    await new Promise(resolve => {
-      gulp.src('../Apps/Playground/Playground/node_modules/@babylonjs/react-native-iosandroid/android/build/intermediates/cmake/release/obj/{arm64-v8a,armeabi-v7a,x86}/libturbomodulejsijni.so')
-        .pipe(gulp.dest(`${assemblediOSAndroidDir}/android/src/main/jniLibs/`))
-        .on('end', resolve);
-    });
-  }
-};
+//   const versionIndex = process.argv.indexOf('--reactNative');
+//   if (versionIndex != -1 && process.argv[versionIndex + 1] != '0.71') {
+//     await new Promise(resolve => {
+//       gulp.src('../Apps/Playground/Playground/node_modules/@babylonjs/react-native-iosandroid/android/build/intermediates/cmake/release/obj/{arm64-v8a,armeabi-v7a,x86}/libturbomodulejsijni.so')
+//         .pipe(gulp.dest(`${assemblediOSmacOSDir}/android/src/main/jniLibs/`))
+//         .on('end', resolve);
+//     });
+//   }
+// };
 
 const createUWPDirectories = async () => {
   shelljs.mkdir('-p', `${assembledWindowsDir}`);
@@ -467,7 +525,29 @@ const validateAssembled = async () => {
   checkDirectory(actual, expected, 'Assembled');
 }
 
-const validateAssemblediOSAndroid = async () => {
+const validateAssemblediOSmacOS = async () => {
+  // Simplified validation for iOS/macOS build - checking that key directories exist
+  const expectedBasePaths = [
+    `${assemblediOSmacOSDir}/ios`,
+    `${assemblediOSmacOSDir}/macos`,
+    `${assemblediOSmacOSDir}/package.json`,
+    `${assemblediOSmacOSDir}/README.md`,
+    `${assemblediOSmacOSDir}/NOTICE.html`,
+    `${assemblediOSmacOSDir}/react-native-babylon.podspec`
+  ];
+
+  const actualiOSmacOS = glob.sync(`${assemblediOSmacOSDir}/**/*`);
+  console.log(chalk.black.bgCyan(`Validating ${assemblediOSmacOSDir} directory structure...`));
+  
+  // Check that all expected base paths exist
+  expectedBasePaths.forEach(expectedPath => {
+    if (!actualiOSmacOS.includes(expectedPath)) {
+      console.error(chalk.white.bgRedBright(`Missing expected file/directory: ${expectedPath}`));
+    }
+  });
+  
+  console.log(chalk.black.bgGreen(`${assemblediOSmacOSDir} validation completed.`));
+};
   let expectediosandroid = [
     `${assemblediOSAndroidDir}/android`,
     `${assemblediOSAndroidDir}/android/build.gradle`,
@@ -606,8 +686,8 @@ const createPackage = async () => {
   exec('npm pack', 'Assembled');
 };
 
-const createPackageiOSAndroid = async () => {
-  exec('npm pack', `${assemblediOSAndroidDir}`);
+const createPackageiOSmacOS = async () => {
+  exec('npm pack', `${assemblediOSmacOSDir}`);
 };
 
 const createPackageUWP = async () => {
@@ -615,7 +695,7 @@ const createPackageUWP = async () => {
 }
 
 const switchToBaseKit = async () => {
-  assemblediOSAndroidDir = 'Assembled-BaseKit-iOSAndroid';
+  assemblediOSmacOSDir = 'Assembled-BaseKit-iOSmacOS';
   assembledWindowsDir = 'Assembled-BaseKit-Windows';
   cmakeBasekitBuildDefinition = '-DBASEKIT_BUILD=1';
   basekitBuild = true;
@@ -636,65 +716,67 @@ const patchPackageVersion = async () => {
 
     if (versionIndex != -1) {
       const version = process.argv[versionIndex + 1];
-      if (version == '0.64' || version == '0.65' || version == '0.69' || version == '0.70' || version == '0.71') {
+      // Restrict React Native support to versions 0.69-0.71 only
+      if (version == '0.69' || version == '0.70' || version == '0.71') {
         console.log(chalk.black.bgCyan(`Updating Package.json for React Native ${version}.`));
 
-        // default 0.64
-        let peerDep = '>=0.63.1 <0.65.0';
-        let packageNamePostfix = '-0-64';
-        if (version == '0.65') {
-          peerDep = '>=0.65.0 < 0.69.0';
-          packageNamePostfix = '-0-65';
-        } else if (version == '0.69') {
-          peerDep = '>=0.69.0 < 0.70.0';
+        let peerDep, packageNamePostfix;
+        if (version == '0.69') {
+          peerDep = '>=0.69.0 <0.70.0';
           packageNamePostfix = '-0-69';
         } else if (version == '0.70') {
-          peerDep = '>=0.70.0 < 0.71.0';
+          peerDep = '>=0.70.0 <0.71.0';
           packageNamePostfix = '-0-70';
         } else if (version == '0.71') {
-          peerDep = '>=0.71.0';
+          peerDep = '>=0.71.0 <0.72.0';
           packageNamePostfix = '-0-71';
         }
 
         if (basekitBuild)
         {
-          packageJsoniOSAndroid["name"] = "@babylonjs/react-native-basekit-iosandroid" + packageNamePostfix;
-          packageJsonWindows["name"] = "@babylonjs/react-native-basekit-windows" + packageNamePostfix;
+          packageJsoniOSAndroid["name"] = "@babylonjs/react-native-basekit-iosmacos" + packageNamePostfix;
+          // Windows support removed
+          // packageJsonWindows["name"] = "@babylonjs/react-native-basekit-windows" + packageNamePostfix;
           delete packageJsoniOSAndroid['peerDependencies']['react-native-permissions'];
-          delete packageJsonWindows['peerDependencies']['react-native-permissions'];
+          // Windows support removed
         } else {
-          packageJsoniOSAndroid["name"] = "@babylonjs/react-native-iosandroid" + packageNamePostfix;
-          packageJsonWindows["name"] = "@babylonjs/react-native-windows" + packageNamePostfix;
+          packageJsoniOSAndroid["name"] = "@babylonjs/react-native-iosmacos" + packageNamePostfix;
+          // Windows support removed
         }
         packageJson.peerDependencies['react-native'] = peerDep;
         packageJsoniOSAndroid.peerDependencies['react-native'] = peerDep;
-        packageJsonWindows.peerDependencies['react-native'] = peerDep;
-        packageJsonWindows.peerDependencies['react-native-windows'] = peerDep;
+        // Windows support removed
+      } else {
+        console.log(chalk.black.bgRedBright(`Unsupported React Native version ${version}. Only versions 0.69, 0.70, and 0.71 are supported.`));
       }
     }
     // release version
     if (releaseVersionIndex !== -1) {
       const releaseVersion = process.argv[releaseVersionIndex + 1];
       console.log(chalk.black.bgCyan(`Updating Package.json for Release version ${releaseVersion}.`));
-      packageJsonWindows.peerDependencies["@babylonjs/react-native"] = releaseVersion;
+      // Windows support removed
       packageJsoniOSAndroid.peerDependencies["@babylonjs/react-native"] = releaseVersion;
     }
 
     fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
-    fs.writeFileSync(packageJsonPathWindows, JSON.stringify(packageJsonWindows, null, 2));
+    // Windows support removed - commenting out Windows package.json writes
+    // fs.writeFileSync(packageJsonPathWindows, JSON.stringify(packageJsonWindows, null, 2));
     fs.writeFileSync(packageJsonPathiOSAndroid, JSON.stringify(packageJsoniOSAndroid, null, 2));
   } else {
     console.log(chalk.black.bgCyan(`No valid React Native version set. Letting Package.json unchanged.`))
   }
 }
 
-const copyFiles = gulp.parallel(copyIOSAndroidCommonFiles, copyIOSFiles, copyAndroidFiles);
+const copyFiles = gulp.parallel(copyIOSmacOSCommonFiles, copyIOSFiles, copyMacOSFiles);
 
 const buildIOS = gulp.series(makeXCodeProj, buildIphoneOS, buildIphoneSimulator);
 const buildIOSRNTA = gulp.series(makeXCodeProjRNTA, createXCFrameworks);
+const buildMacOS = gulp.series(makeMacOSXCodeProj, buildMacOSRelease, createMacOSFrameworks);
+const buildMacOSRNTA = gulp.series(makeMacOSXCodeProjRNTA, createMacOSFrameworks);
 const buildTS = gulp.series(patchPackageVersion, copyCommonFiles, copySharedFiles, buildTypeScript, validateAssembled);
-const buildIOSAndroid = gulp.series(patchPackageVersion, buildIOS, buildAndroid, createIOSUniversalLibs, copyFiles, validateAssemblediOSAndroid);
-const build = gulp.series(buildIOSAndroid, switchToBaseKit, buildIOSAndroid);
+// Updated to remove Android and add macOS
+const buildIOSmacOS = gulp.series(patchPackageVersion, buildIOS, buildMacOS, createIOSUniversalLibs, copyFiles, validateAssemblediOSmacOS);
+const build = gulp.series(buildIOSmacOS, switchToBaseKit, buildIOSmacOS);
 const rebuild = gulp.series(clean, build);
 const pack = gulp.series(rebuild, createPackage);
 
