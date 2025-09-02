@@ -267,6 +267,23 @@ const copyMacOSFiles = async () => {
   });
 };
 
+const copyIOSFiles = async () => {
+  await new Promise(resolve => {
+    gulp.src('../Apps/Playground/Playground/node_modules/@babylonjs/react-native-iosandroid/ios/*.h')
+      .pipe(gulp.src('../Apps/Playground/Playground/node_modules/@babylonjs/react-native-iosandroid/ios/*.mm'))
+      // This xcodeproj is garbage that we don't need in the package, but `pod install` ignores the package if it doesn't contain at least one xcodeproj. 🤷🏼‍♂️
+      .pipe(gulp.src('iOS/Build/ReactNativeBabylon.xcodeproj**/**/*'))
+      .pipe(gulp.dest(`${assemblediOSAndroidDir}/ios`))
+      .on('end', resolve);
+  });
+
+  await new Promise(resolve => {
+    gulp.src('../Package/iOS/Build/_deps/babylonnative-src/Dependencies/xr/Source/ARKit/Include/*')
+      .pipe(gulp.dest(`${assemblediOSAndroidDir}/ios/include`))
+      .on('end', resolve);
+  });
+};
+
 const createIOSUniversalLibs = async () => {
   shelljs.mkdir('-p', `${assemblediOSmacOSDir}/ios/libs`);
   const libs = await readdirAsync('iOS/Build/Release-iphoneos');
@@ -531,6 +548,140 @@ const validateAssemblediOSmacOS = async () => {
   
   console.log(chalk.black.bgGreen(`${assemblediOSmacOSDir} validation completed.`));
 };
+  let expectediosandroid = [
+    `${assemblediOSAndroidDir}/android`,
+    `${assemblediOSAndroidDir}/android/build.gradle`,
+    `${assemblediOSAndroidDir}/android/include`,
+    `${assemblediOSAndroidDir}/android/include/IXrContextARCore.h`,
+    `${assemblediOSAndroidDir}/android/src`,
+    `${assemblediOSAndroidDir}/android/src/main`,
+    `${assemblediOSAndroidDir}/android/src/main/AndroidManifest.xml`,
+    `${assemblediOSAndroidDir}/android/src/main/java`,
+    `${assemblediOSAndroidDir}/android/src/main/java/com`,
+    `${assemblediOSAndroidDir}/android/src/main/java/com/babylonreactnative`,
+    `${assemblediOSAndroidDir}/android/src/main/java/com/babylonreactnative/BabylonModule.java`,
+    `${assemblediOSAndroidDir}/android/src/main/java/com/babylonreactnative/BabylonNativeInterop.java`,
+    `${assemblediOSAndroidDir}/android/src/main/java/com/babylonreactnative/BabylonPackage.java`,
+    `${assemblediOSAndroidDir}/android/src/main/java/com/babylonreactnative/EngineView.java`,
+    `${assemblediOSAndroidDir}/android/src/main/java/com/babylonreactnative/EngineViewManager.java`,
+    `${assemblediOSAndroidDir}/android/src/main/java/com/babylonreactnative/SnapshotDataReturnedEvent.java`,
+    `${assemblediOSAndroidDir}/android/src/main/jniLibs`,
+    `${assemblediOSAndroidDir}/android/src/main/jniLibs/arm64-v8a`,
+    `${assemblediOSAndroidDir}/android/src/main/jniLibs/arm64-v8a/libBabylonNative.so`,
+    `${assemblediOSAndroidDir}/android/src/main/jniLibs/armeabi-v7a`,
+    `${assemblediOSAndroidDir}/android/src/main/jniLibs/armeabi-v7a/libBabylonNative.so`,
+    `${assemblediOSAndroidDir}/android/src/main/jniLibs/x86`,
+    `${assemblediOSAndroidDir}/android/src/main/jniLibs/x86/libBabylonNative.so`,
+    `${assemblediOSAndroidDir}/android/src/main/jniLibs/x86_64`,
+    `${assemblediOSAndroidDir}/android/src/main/jniLibs/x86_64/libBabylonNative.so`,
+    `${assemblediOSAndroidDir}/ios`,
+    `${assemblediOSAndroidDir}/ios/BabylonModule.mm`,
+    `${assemblediOSAndroidDir}/ios/BabylonNativeInterop.h`,
+    `${assemblediOSAndroidDir}/ios/BabylonNativeInterop.mm`,
+    `${assemblediOSAndroidDir}/ios/EngineViewManager.mm`,
+    `${assemblediOSAndroidDir}/ios/include`,
+    `${assemblediOSAndroidDir}/ios/libs`,
+    `${assemblediOSAndroidDir}/ios/libs/libBabylonNative.a`,
+    `${assemblediOSAndroidDir}/ios/libs/libbgfx.a`,
+    `${assemblediOSAndroidDir}/ios/libs/libbimg.a`,
+    `${assemblediOSAndroidDir}/ios/libs/libbx.a`,
+    `${assemblediOSAndroidDir}/ios/libs/libCanvas.a`,
+    `${assemblediOSAndroidDir}/ios/libs/libGenericCodeGen.a`,
+    `${assemblediOSAndroidDir}/ios/libs/libglslang.a`,
+    `${assemblediOSAndroidDir}/ios/libs/libglslang-default-resource-limits.a`,
+    `${assemblediOSAndroidDir}/ios/libs/libGraphics.a`,
+    `${assemblediOSAndroidDir}/ios/libs/libJsRuntime.a`,
+    `${assemblediOSAndroidDir}/ios/libs/libMachineIndependent.a`,
+    `${assemblediOSAndroidDir}/ios/libs/libnapi.a`,
+    `${assemblediOSAndroidDir}/ios/libs/libNativeCapture.a`,
+    `${assemblediOSAndroidDir}/ios/libs/libNativeEngine.a`,
+    `${assemblediOSAndroidDir}/ios/libs/libNativeInput.a`,
+    `${assemblediOSAndroidDir}/ios/libs/libNativeOptimizations.a`,
+    `${assemblediOSAndroidDir}/ios/libs/libNativeTracing.a`,
+    `${assemblediOSAndroidDir}/ios/libs/libNativeXr.a`,
+    `${assemblediOSAndroidDir}/ios/libs/libOGLCompiler.a`,
+    `${assemblediOSAndroidDir}/ios/libs/libOSDependent.a`,
+    `${assemblediOSAndroidDir}/ios/libs/libScheduling.a`,
+    `${assemblediOSAndroidDir}/ios/libs/libspirv-cross-core.a`,
+    `${assemblediOSAndroidDir}/ios/libs/libspirv-cross-msl.a`,
+    `${assemblediOSAndroidDir}/ios/libs/libSPIRV.a`,
+    `${assemblediOSAndroidDir}/ios/libs/libbimg_encode.a`,
+    `${assemblediOSAndroidDir}/ios/libs/libbimg_decode.a`,
+    `${assemblediOSAndroidDir}/ios/libs/libUrlLib.a`,
+    `${assemblediOSAndroidDir}/ios/libs/libWindow.a`,
+    `${assemblediOSAndroidDir}/ios/libs/libXMLHttpRequest.a`,
+    `${assemblediOSAndroidDir}/ios/libs/libNativeCamera.a`,
+    `${assemblediOSAndroidDir}/ios/libs/libxr.a`,
+    `${assemblediOSAndroidDir}/ios/include/IXrContextARKit.h`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/project.pbxproj`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/project.xcworkspace`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/project.xcworkspace/xcshareddata`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/project.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/AbortController.xcscheme`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/AppRuntime.xcscheme`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/BabylonNative.xcscheme`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/bgfx.xcscheme`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/bimg_decode.xcscheme`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/bimg_encode.xcscheme`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/bimg.xcscheme`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/bx.xcscheme`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/Canvas.xcscheme`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/Console.xcscheme`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/ExternalTexture.xcscheme`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/Foundation.xcscheme`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/GenericCodeGen.xcscheme`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/glslang-default-resource-limits.xcscheme`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/glslang.xcscheme`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/Graphics.xcscheme`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/JsRuntime.xcscheme`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/MachineIndependent.xcscheme`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/napi.xcscheme`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/NativeCamera.xcscheme`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/NativeCapture.xcscheme`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/NativeEngine.xcscheme`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/NativeInput.xcscheme`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/NativeOptimizations.xcscheme`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/NativeTracing.xcscheme`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/NativeXr.xcscheme`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/OGLCompiler.xcscheme`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/OSDependent.xcscheme`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/Scheduling.xcscheme`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/ScriptLoader.xcscheme`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/spirv-cross-core.xcscheme`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/spirv-cross-msl.xcscheme`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/SPIRV.xcscheme`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/TestUtils.xcscheme`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/URL.xcscheme`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/UrlLib.xcscheme`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/WebSocket.xcscheme`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/Window.xcscheme`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/XMLHttpRequest.xcscheme`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/xr.xcscheme`,
+    `${assemblediOSAndroidDir}/ios/ReactNativeBabylon.xcodeproj/xcshareddata/xcschemes/Blob.xcscheme`,
+    `${assemblediOSAndroidDir}/package.json`,
+    `${assemblediOSAndroidDir}/react-native-babylon.podspec`,
+    `${assemblediOSAndroidDir}/README.md`,
+    `${assemblediOSAndroidDir}/NOTICE.html`,
+  ];
+
+  const versionIndex = process.argv.indexOf('--reactNative');	
+  if (versionIndex != -1) {	
+    if (process.argv[versionIndex + 1] !== '0.71') {	
+      const expectediosandroidNot071 = [
+        `${assemblediOSAndroidDir}/android/src/main/jniLibs/arm64-v8a/libturbomodulejsijni.so`,
+        `${assemblediOSAndroidDir}/android/src/main/jniLibs/armeabi-v7a/libturbomodulejsijni.so`,
+        `${assemblediOSAndroidDir}/android/src/main/jniLibs/x86/libturbomodulejsijni.so`,
+      ];
+      expectediosandroid = expectediosandroid.concat(expectediosandroidNot071);
+    }
+  }
+  const actualiosandroid = glob.sync(`${assemblediOSAndroidDir}/**/*`);
+  checkDirectory(actualiosandroid, expectediosandroid, `${assemblediOSAndroidDir}`);
+}
+
 const createPackage = async () => {
   exec('npm pack', 'Assembled');
 };
@@ -630,18 +781,14 @@ const rebuild = gulp.series(clean, build);
 const pack = gulp.series(rebuild, createPackage);
 
 exports.validateAssembled = validateAssembled;
-exports.validateAssemblediOSmacOS = validateAssemblediOSmacOS;
+exports.validateAssemblediOSAndroid = validateAssemblediOSAndroid;
 
 exports.buildIOS = buildIOS;
 exports.buildIOSRNTA = buildIOSRNTA;
-exports.buildMacOS = buildMacOS;
-exports.buildMacOSRNTA = buildMacOSRNTA;
-// Android support removed
-// exports.buildAndroid = buildAndroid;
-// exports.buildAndroidRNTA = buildAndroidRNTA;
+exports.buildAndroid = buildAndroid;
+exports.buildAndroidRNTA = buildAndroidRNTA;
 exports.createIOSUniversalLibs = createIOSUniversalLibs;
 exports.createXCFrameworks = createXCFrameworks;
-exports.createMacOSFrameworks = createMacOSFrameworks;
 exports.copyFiles = copyFiles;
 
 exports.clean = clean;
@@ -649,18 +796,42 @@ exports.build = build;
 exports.rebuild = rebuild;
 exports.pack = pack;
 
-// Updated to use iOS/macOS instead of iOS/Android
-const packiOSmacOS = gulp.series(clean, buildIOS, buildMacOS, copyFiles, createPackage, createPackageiOSmacOS);
-exports.packiOSmacOS = packiOSmacOS;
+const packAndroid = gulp.series(clean, buildAndroid, copyFiles, createPackage, createPackageiOSAndroid);
+exports.packAndroid = packAndroid;
 
-// Windows/UWP support removed - all UWP exports commented out
-// const copyPackageFilesUWP = gulp.series(copyUWPFiles);
-// const buildUWPPublish = gulp.series(patchPackageVersion, buildUWP, copyPackageFilesUWP, switchToBaseKit, patchPackageVersion, buildUWP, copyPackageFilesUWP);
-// const packUWP = gulp.series(clean, buildUWP, copyPackageFilesUWP, createPackage, createPackageUWP);
-// const packUWPNoBuild = gulp.series(clean, copyPackageFilesUWP, createPackage, createPackageUWP);
+const copyPackageFilesUWP = gulp.series(copyUWPFiles);
+const buildUWPPublish = gulp.series(patchPackageVersion, buildUWP, copyPackageFilesUWP, switchToBaseKit, patchPackageVersion, buildUWP, copyPackageFilesUWP);
+const packUWP = gulp.series(clean, buildUWP, copyPackageFilesUWP, createPackage, createPackageUWP);
+const packUWPNoBuild = gulp.series(clean, copyPackageFilesUWP, createPackage, createPackageUWP);
 
 exports.buildTS = buildTS;
-exports.patchPackageVersion = patchPackageVersion;
-// All Windows/UWP exports removed
+exports.makeUWPProjectx86 = makeUWPProjectx86;
+exports.makeUWPProjectx64 = makeUWPProjectx64;
+exports.makeUWPProjectARM64 = makeUWPProjectARM64;
+exports.makeUWPProject = makeUWPProject;
+
+exports.buildUWPx86Debug = buildUWPx86Debug;
+exports.buildUWPx86Release = buildUWPx86Release;
+exports.buildUWPx64Debug = buildUWPx64Debug;
+exports.buildUWPx64Release = buildUWPx64Release;
+exports.buildUWPARM64Debug = buildUWPARM64Debug;
+exports.buildUWPARM64Release = buildUWPARM64Release;
+exports.buildUWPProject = buildUWPProject;
+
+exports.nugetRestoreUWPPlayground = nugetRestoreUWPPlayground;
+exports.buildUWPPlaygroundx86Debug = buildUWPPlaygroundx86Debug;
+exports.buildUWPPlaygroundx86Release = buildUWPPlaygroundx86Release;
+exports.buildUWPPlaygroundx64Debug = buildUWPPlaygroundx64Debug;
+exports.buildUWPPlaygroundx64Release = buildUWPPlaygroundx64Release;
+exports.buildUWPPlaygroundARM64Debug = buildUWPPlaygroundARM64Debug;
+exports.buildUWPPlaygroundARM64Release = buildUWPPlaygroundARM64Release;
+exports.buildUWPPlayground = buildUWPPlayground;
+
+exports.buildUWP = buildUWP;
+exports.buildUWPPublish = buildUWPPublish;
+
+exports.copyUWPFiles = copyUWPFiles;
+exports.packUWP = packUWP;
+exports.packUWPNoBuild = packUWPNoBuild;
 
 exports.default = build;

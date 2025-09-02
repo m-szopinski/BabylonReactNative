@@ -8,23 +8,23 @@ permissions:
   contents: read
 
 env:
-  BRN_Version: '0.64'
+  BRN_Version: '0.69'
 
 jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        rn-version: ['0.64', '0.69', '0.70', '0.71']
+        rn-version: ['0.69', '0.70', '0.71']
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
 
       - name: Setup Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 16
+          node-version: 20
 
       - name: NPM Install (Playground)
         run: npm install

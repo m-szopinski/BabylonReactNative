@@ -8,8 +8,8 @@ permissions:
   contents: read
 
 jobs:
-  build-ios-android:
-    name: Build iOS/Android artifacts (RN 0.71)
+  build-ios-macos:
+    name: Build iOS/macOS artifacts (RN 0.71)
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
@@ -20,9 +20,9 @@ jobs:
         uses: ./.github/workflows/macos_freespace
 
       - name: Setup Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 16
+          node-version: 20
 
       - name: Setup CMake
         uses: jwlawson/actions-setup-cmake@v1.8
@@ -56,20 +56,20 @@ jobs:
         run: npm install
         working-directory: ./Package
 
-      - name: Build (Gulp)
-        run: npx gulp --reactNative 0.71 --releaseVersion 0.0.0-pr
+      - name: Build (Gulp) - iOS and macOS
+        run: npx gulp build --reactNative 0.71 --releaseVersion 0.0.0-pr
         working-directory: ./Package
         env:
           JAVA_HOME: ${{ env.JAVA_HOME_17_X64 }}
 
-      - name: Upload Assembled iOS Android Folder
+      - name: Upload Assembled iOS macOS Folder
         uses: actions/upload-artifact@v4
         with:
-          name: 'Assembled-iOSAndroid0.71'
-          path: Package/Assembled-iOSAndroid
+          name: 'Assembled-iOSmacOS0.71'
+          path: Package/Assembled-iOSmacOS
 
-      - name: Upload Assembled iOS Android BaseKit Folder
+      - name: Upload Assembled iOS macOS BaseKit Folder
         uses: actions/upload-artifact@v4
         with:
-          name: 'Assembled-BaseKit-iOSAndroid0.71'
-          path: Package/Assembled-BaseKit-iOSAndroid
+          name: 'Assembled-BaseKit-iOSmacOS0.71'
+          path: Package/Assembled-BaseKit-iOSmacOS
