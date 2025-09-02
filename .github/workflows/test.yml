@@ -1,0 +1,39 @@
+name: Test (PR)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+env:
+  BRN_Version: '0.76'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rn-version: ['0.76', '0.77']
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - name: NPM Install (Playground)
+        run: npm install
+        working-directory: ./Apps/Playground
+
+      - name: NPM Install (React Native ${{ matrix.rn-version }})
+        run: npm run select --reactNative ${{ matrix.rn-version }}
+        working-directory: ./Apps/Playground
+
+      - name: Run Tests (React Native ${{ matrix.rn-version }})
+        run: npm test
+        working-directory: ./Apps/Playground/${{ matrix.rn-version }}

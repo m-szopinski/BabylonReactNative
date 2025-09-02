@@ -1,234 +1,231 @@
 name: Publish Package
+
 on:
   release:
     types: [published]
+  push:
+    tags:
+      - '*'
 
 permissions:
   contents: read
 
 jobs:
-  build-ios-macos-069:
-    uses: ./.github/workflows/ios_android.yml
-    with:
-      react-native-version: '0.69'
-      release-version: ${GITHUB_REF/refs\/tags\//}
-
-  build-ios-macos-070:
-    uses: ./.github/workflows/ios_android.yml
-    with:
-      react-native-version: '0.70'
-      release-version: ${GITHUB_REF/refs\/tags\//}
-
-  build-ios-macos-071:
-    uses: ./.github/workflows/ios_android.yml
-    with:
-      react-native-version: '0.71'
-      release-version: ${GITHUB_REF/refs\/tags\//}
-
-  build-typescript:
-    uses: ./.github/workflows/typescript.yml
-    with:
-      release-version: ${GITHUB_REF/refs\/tags\//}
-
-  package:
-    needs: [build-typescript, build-ios-macos-069, build-ios-macos-070, build-ios-macos-071]
-    runs-on: macos-latest
+  build-ios-macos-076:
+    name: Build iOS/macOS (RN 0.76)
+    runs-on: macos-14
     steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v2.3.3
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Free space
+        uses: ./.github/workflows/macos_freespace
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - name: Setup CMake
+        uses: jwlawson/actions-setup-cmake@v1.8
+        with:
+          cmake-version: '3.26.3'
+
+      - name: Setup Ninja
+        run: brew install ninja
+
+      - name: Select Xcode 16
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '16.*'
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          check-latest: true
+
+      - name: NPM Install (Playground)
+        run: npm install
+        working-directory: ./Apps/Playground
+
+      - name: Select React Native Version 0.76
+        run: npm run select --reactNative 0.76
+        working-directory: ./Apps/Playground
+
       - name: NPM Install (Binary Package)
         run: npm install
         working-directory: ./Package
+
+      - name: Build (Gulp)
+        run: npx gulp --reactNative 0.76 --releaseVersion ${{ github.ref_name }}
+        working-directory: ./Package
+        env:
+          JAVA_HOME: ${{ env.JAVA_HOME_17_X64 }}
+
+      - name: Upload Assembled iOS macOS Folder
+        uses: actions/upload-artifact@v4
+        with:
+          name: 'Assembled-iOSmacOS0.76'
+          path: Package/Assembled-iOSAndroid
+
+      - name: Upload Assembled iOS macOS BaseKit Folder
+        uses: actions/upload-artifact@v4
+        with:
+          name: 'Assembled-BaseKit-iOSmacOS0.76'
+          path: Package/Assembled-BaseKit-iOSAndroid
+
+  build-ios-macos-077:
+    name: Build iOS/macOS (RN 0.77)
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Free space
+        uses: ./.github/workflows/macos_freespace
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - name: Setup CMake
+        uses: jwlawson/actions-setup-cmake@v1.8
+        with:
+          cmake-version: '3.26.3'
+
+      - name: Setup Ninja
+        run: brew install ninja
+
+      - name: Select Xcode 16
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '16.*'
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          check-latest: true
+
+      - name: NPM Install (Playground)
+        run: npm install
+        working-directory: ./Apps/Playground
+
+      - name: Select React Native Version 0.77
+        run: npm run select --reactNative 0.77
+        working-directory: ./Apps/Playground
+
+      - name: NPM Install (Binary Package)
+        run: npm install
+        working-directory: ./Package
+
+      - name: Build (Gulp)
+        run: npx gulp --reactNative 0.77 --releaseVersion ${{ github.ref_name }}
+        working-directory: ./Package
+        env:
+          JAVA_HOME: ${{ env.JAVA_HOME_17_X64 }}
+
+      - name: Upload Assembled iOS macOS Folder
+        uses: actions/upload-artifact@v4
+        with:
+          name: 'Assembled-iOSmacOS0.77'
+          path: Package/Assembled-iOSAndroid
+
+      - name: Upload Assembled iOS macOS BaseKit Folder
+        uses: actions/upload-artifact@v4
+        with:
+          name: 'Assembled-BaseKit-iOSmacOS0.77'
+          path: Package/Assembled-BaseKit-iOSAndroid
+
+  build-typescript:
+    name: Build TypeScript
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - name: NPM Install (Playground)
+        run: npm install
+        working-directory: ./Apps/Playground
+
+      - name: Select React Native Version 0.76
+        run: npm run select 0.76
+        working-directory: ./Apps/Playground
+
+      - name: NPM Install (Binary Package)
+        run: npm install
+        working-directory: ./Package
+
+      - name: Gulp buildTS
+        run: npx gulp buildTS --releaseVersion ${{ github.ref_name }}
+        working-directory: ./Package
+
+      - name: Upload Assembled Folder
+        uses: actions/upload-artifact@v4
+        with:
+          name: 'Assembled'
+          path: Package/Assembled
+
+  package:
+    name: Package and Publish to npm
+    needs: [build-typescript, build-ios-macos-076, build-ios-macos-077]
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: NPM Install (Binary Package)
+        run: npm install
+        working-directory: ./Package
+
       - name: Download Assembled Folder
         uses: actions/download-artifact@v4
         with:
           name: 'Assembled'
           path: Package/Assembled
-      - name: Download Assembled-iOSAndroid 0.69 Folder
-        uses: actions/download-artifact@v4
-        with:
-          name: 'Assembled-iOSAndroid0.69'
-          path: Package/Assembled-iOSAndroid0.69
-      - name: Download Assembled-iOSAndroid 0.70 Folder
-        uses: actions/download-artifact@v4
-        with:
-          name: 'Assembled-iOSAndroid0.70'
-          path: Package/Assembled-iOSAndroid0.70
-      - name: Download Assembled-iOSAndroid 0.71 Folder
-        uses: actions/download-artifact@v4
-        with:
-          name: 'Assembled-iOSAndroid0.71'
-          path: Package/Assembled-iOSAndroid0.71
-      # - name: Download Assembled-Windows 0.64 Folder
-      #   uses: actions/download-artifact@v4
-      #   with:
-      #     name: 'Assembled-Windows0.64'
-      #     path: Package/Assembled-Windows0.64
-      # - name: Download Assembled-Windows 0.65 Folder
-      #   uses: actions/download-artifact@v4
-      #   with:
-      #     name: 'Assembled-Windows0.65'
-      #     path: Package/Assembled-Windows0.65
-      # - name: Download Assembled-Windows 0.69 Folder
-      #   uses: actions/download-artifact@v4
-      #   with:
-      #     name: 'Assembled-Windows0.69'
-      #     path: Package/Assembled-Windows0.69
-      # - name: Download Assembled-Windows 0.70 Folder
-      #   uses: actions/download-artifact@v4
-      #   with:
-      #     name: 'Assembled-Windows0.70'
-      #     path: Package/Assembled-Windows0.70
-      # - name: Download Assembled-Windows 0.71 Folder
-      #   uses: actions/download-artifact@v4
-      #   with:
-      #     name: 'Assembled-Windows0.71'
-      #     path: Package/Assembled-Windows0.71
-#BaseKit
-      - name: Download Assembled-BaseKit-iOSAndroid 0.69 Folder
-        uses: actions/download-artifact@v4
-        with:
-          name: 'Assembled-BaseKit-iOSAndroid0.69'
-          path: Package/Assembled-BaseKit-iOSAndroid0.69
-      - name: Download Assembled-BaseKit-iOSAndroid 0.70 Folder
-        uses: actions/download-artifact@v4
-        with:
-          name: 'Assembled-BaseKit-iOSAndroid0.70'
-          path: Package/Assembled-BaseKit-iOSAndroid0.70
-      - name: Download Assembled-BaseKit-iOSAndroid 0.71 Folder
-        uses: actions/download-artifact@v4
-        with:
-          name: 'Assembled-BaseKit-iOSAndroid0.71'
-          path: Package/Assembled-BaseKit-iOSAndroid0.71
-      # - name: Download Assembled-BaseKit-Windows 0.69 Folder
-      #   uses: actions/download-artifact@v4
-      #   with:
-      #     name: 'Assembled-BaseKit-Windows0.69'
-      #     path: Package/Assembled-BaseKit-Windows0.69
-      # - name: Download Assembled-BaseKit-Windows 0.70 Folder
-      #   uses: actions/download-artifact@v4
-      #   with:
-      #     name: 'Assembled-BaseKit-Windows0.70'
-      #     path: Package/Assembled-BaseKit-Windows0.70
-      # - name: Download Assembled-BaseKit-Windows 0.71 Folder
-      #   uses: actions/download-artifact@v4
-      #   with:
-      #     name: 'Assembled-BaseKit-Windows0.71'
-      #     path: Package/Assembled-BaseKit-Windows0.71
 
-      - name: Display structure of downloaded Assembled folders
-        run: ls -R
-      - name: Setup Node.js
-        uses: actions/setup-node@v2.1.2
+      - name: Download Assembled-iOSmacOS 0.76 Folder
+        uses: actions/download-artifact@v4
         with:
-          node-version: '18.x'
-          registry-url: 'https://npm.pkg.github.com'
-          scope: '@babylonjs'
-      - name: Version & Publish Package @babylonjs/react-native
-        run: |
-          npm version --no-git-tag-version ${GITHUB_REF/refs\/tags\//}
-          npm publish --access public
-        working-directory: ./Package/Assembled
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: 'Assembled-iOSmacOS0.76'
+          path: Package/Assembled-iOSmacOS0.76
 
-      - name: Version & Publish Package @babylonjs/react-native-iosmacos-0-69
-        run: |
-          npm version --no-git-tag-version ${GITHUB_REF/refs\/tags\//}
-          npm publish --access public
-        working-directory: ./Package/Assembled-iOSAndroid0.69
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Version & Publish Package @babylonjs/react-native-iosmacos-0-70
-        run: |
-          npm version --no-git-tag-version ${GITHUB_REF/refs\/tags\//}
-          npm publish --access public
-        working-directory: ./Package/Assembled-iOSAndroid0.70
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Version & Publish Package @babylonjs/react-native-iosmacos-0-71
-        run: |
-          npm version --no-git-tag-version ${GITHUB_REF/refs\/tags\//}
-          npm publish --access public
-        working-directory: ./Package/Assembled-iOSAndroid0.71
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Download Assembled-iOSmacOS 0.77 Folder
+        uses: actions/download-artifact@v4
+        with:
+          name: 'Assembled-iOSmacOS0.77'
+          path: Package/Assembled-iOSmacOS0.77
 
-      # - name: Version & Publish Package @babylonjs/react-native-windows-0-64
-      #   run: |
-      #     npm version --no-git-tag-version ${GITHUB_REF/refs\/tags\//}
-      #     npm publish --access public
-      #   working-directory: ./Package/Assembled-Windows0.64
-      #   env:
-      #     NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # - name: Version & Publish Package @babylonjs/react-native-windows-0-65
-      #   run: |
-      #     npm version --no-git-tag-version ${GITHUB_REF/refs\/tags\//}
-      #     npm publish --access public
-      #   working-directory: ./Package/Assembled-Windows0.65
-      #   env:
-      #     NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # - name: Version & Publish Package @babylonjs/react-native-windows-0-69
-      #   run: |
-      #     npm version --no-git-tag-version ${GITHUB_REF/refs\/tags\//}
-      #     npm publish --access public
-      #   working-directory: ./Package/Assembled-Windows0.69
-      #   env:
-      #     NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # - name: Version & Publish Package @babylonjs/react-native-windows-0-70
-      #   run: |
-      #     npm version --no-git-tag-version ${GITHUB_REF/refs\/tags\//}
-      #     npm publish --access public
-      #   working-directory: ./Package/Assembled-Windows0.70
-      #   env:
-      #     NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # - name: Version & Publish Package @babylonjs/react-native-windows-0-71
-      #   run: |
-      #     npm version --no-git-tag-version ${GITHUB_REF/refs\/tags\//}
-      #     npm publish --access public
-      #   working-directory: ./Package/Assembled-Windows0.71
-      #   env:
-      #     NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#BaseKit
-      - name: Version & Publish Package @babylonjs/react-native-basekit-iosmacos-0-69
+      - name: Download Assembled-BaseKit-iOSmacOS 0.76 Folder
+        uses: actions/download-artifact@v4
+        with:
+          name: 'Assembled-BaseKit-iOSmacOS0.76'
+          path: Package/Assembled-BaseKit-iOSmacOS0.76
+
+      - name: Download Assembled-BaseKit-iOSmacOS 0.77 Folder
+        uses: actions/download-artifact@v4
+        with:
+          name: 'Assembled-BaseKit-iOSmacOS0.77'
+          path: Package/Assembled-BaseKit-iOSmacOS0.77
+
+      - name: Configure npm auth
         run: |
-          npm version --no-git-tag-version ${GITHUB_REF/refs\/tags\//}
-          npm publish --access public
-        working-directory: ./Package/Assembled-BaseKit-iOSAndroid0.69
+          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Version & Publish Package @babylonjs/react-native-basekit-iosmacos-0-70
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish package(s)
         run: |
-          npm version --no-git-tag-version ${GITHUB_REF/refs\/tags\//}
           npm publish --access public
-        working-directory: ./Package/Assembled-BaseKit-iOSAndroid0.70
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Version & Publish Package @babylonjs/react-native-basekit-iosmacos-0-71
-        run: |
-          npm version --no-git-tag-version ${GITHUB_REF/refs\/tags\//}
-          npm publish --access public
-        working-directory: ./Package/Assembled-BaseKit-iOSAndroid0.71
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # - name: Version & Publish Package @babylonjs/react-native-basekit-windows-0-69
-      #   run: |
-      #     npm version --no-git-tag-version ${GITHUB_REF/refs\/tags\//}
-      #     npm publish --access public
-      #   working-directory: ./Package/Assembled-BaseKit-Windows0.69
-      #   env:
-      #     NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # - name: Version & Publish Package @babylonjs/react-native-basekit-windows-0-70
-      #   run: |
-      #     npm version --no-git-tag-version ${GITHUB_REF/refs\/tags\//}
-      #     npm publish --access public
-      #   working-directory: ./Package/Assembled-BaseKit-Windows0.70
-      #   env:
-      #     NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      # - name: Version & Publish Package @babylonjs/react-native-basekit-windows-0-71
-      #   run: |
-      #     npm version --no-git-tag-version ${GITHUB_REF/refs\/tags\//}
-      #     npm publish --access public
-      #   working-directory: ./Package/Assembled-BaseKit-Windows0.71
-      #   env:
-      #     NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        working-directory: ./Package
