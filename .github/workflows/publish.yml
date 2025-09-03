@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: read
+  packages: write
 
 jobs:
   build-ios-macos-069:
@@ -255,7 +256,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          registry-url: 'https://registry.npmjs.org'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@m-szopinski'
           always-auth: true
 
       - name: NPM Install (Binary Package)
@@ -304,21 +306,22 @@ jobs:
           name: 'Assembled-BaseKit-iOSmacOS0.71'
           path: Package/Assembled-BaseKit-iOSmacOS0.71
 
+      # Note: Package names should be scoped to @m-szopinski when publishing to GitHub Packages
       - name: Publish package(s)
         run: |
           set -euo pipefail
           # Publish the main package
           pushd Assembled
-          npm publish --tag latest --access public
+          npm publish --tag latest --registry https://npm.pkg.github.com
           popd
           # Publish the platform-specific packages
           for dir in Assembled-iOSmacOS*/; do
             if [ -d "$dir" ]; then
               pushd "$dir"
-              npm publish --tag latest --access public
+              npm publish --tag latest --registry https://npm.pkg.github.com
               popd
             fi
           done
         working-directory: ./Package
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
