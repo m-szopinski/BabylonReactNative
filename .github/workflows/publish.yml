@@ -228,7 +228,7 @@ jobs:
         working-directory: ./Apps/Playground
 
       - name: Select React Native Version 0.69
-        run: npm run select 0.69
+        run: npm run select --reactNative 0.69
         working-directory: ./Apps/Playground
 
       - name: NPM Install (Binary Package)
@@ -259,6 +259,12 @@ jobs:
           registry-url: 'https://npm.pkg.github.com'
           scope: '@m-szopinski'
           always-auth: true
+
+      - name: Install jq
+        run: brew install jq
+
+      - name: Make normalization script executable
+        run: chmod +x .github/scripts/normalize-package-scope.sh
 
       - name: NPM Install (Binary Package)
         run: npm install
@@ -306,6 +312,9 @@ jobs:
           name: 'Assembled-BaseKit-iOSmacOS0.71'
           path: Package/Assembled-BaseKit-iOSmacOS0.71
 
+      - name: Normalize package scopes
+        run: .github/scripts/normalize-package-scope.sh Package
+
       # Note: Package names should be scoped to @m-szopinski when publishing to GitHub Packages
       - name: Publish package(s)
         run: |
@@ -315,7 +324,7 @@ jobs:
           npm publish --tag latest --registry https://npm.pkg.github.com
           popd
           # Publish the platform-specific packages
-          for dir in Assembled-iOSmacOS*/; do
+          for dir in Assembled-iOSmacOS*/ Assembled-BaseKit-iOSmacOS*/; do
             if [ -d "$dir" ]; then
               pushd "$dir"
               npm publish --tag latest --registry https://npm.pkg.github.com
