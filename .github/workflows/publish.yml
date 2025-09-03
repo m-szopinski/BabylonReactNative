@@ -251,6 +251,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup Node (for publish with auth)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: 'https://registry.npmjs.org'
+          always-auth: true
+
       - name: NPM Install (Binary Package)
         run: npm install
         working-directory: ./Package
@@ -297,20 +304,21 @@ jobs:
           name: 'Assembled-BaseKit-iOSmacOS0.71'
           path: Package/Assembled-BaseKit-iOSmacOS0.71
 
-      - name: Configure npm auth
-        run: |
-          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-
       - name: Publish package(s)
         run: |
-          # First publish the main package from Assembled directory
-          cd Assembled && npm publish --tag latest --access public
-          # Then publish the platform-specific packages
-          for dir in Assembled-*iOSmacOS*/; do
+          set -euo pipefail
+          # Publish the main package
+          pushd Assembled
+          npm publish --tag latest --access public
+          popd
+          # Publish the platform-specific packages
+          for dir in Assembled-iOSmacOS*/; do
             if [ -d "$dir" ]; then
-              cd "$dir" && npm publish --tag latest --access public && cd ..
+              pushd "$dir"
+              npm publish --tag latest --access public
+              popd
             fi
           done
         working-directory: ./Package
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
