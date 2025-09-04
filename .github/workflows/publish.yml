@@ -260,12 +260,6 @@ jobs:
           scope: '@m-szopinski'
           always-auth: true
 
-      - name: Install jq
-        run: brew install jq
-
-      - name: Make normalization script executable
-        run: chmod +x .github/scripts/normalize-package-scope.sh
-
       - name: NPM Install (Binary Package)
         run: npm install
         working-directory: ./Package
@@ -312,66 +306,22 @@ jobs:
           name: 'Assembled-BaseKit-iOSmacOS0.71'
           path: Package/Assembled-BaseKit-iOSmacOS0.71
 
-      - name: Normalize package scopes
-        run: .github/scripts/normalize-package-scope.sh Package
-
-      - name: Display structure of downloaded folders
-        run: ls -R
-        working-directory: ./Package
-
       # Note: Package names should be scoped to @m-szopinski when publishing to GitHub Packages
-      - name: Version & Publish Package @m-szopinski/react-native
+      - name: Publish package(s)
         run: |
-          npm version --no-git-tag-version ${{ github.ref_name }}
-          npm publish --access public
-        working-directory: ./Package/Assembled
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Version & Publish Package @m-szopinski/react-native-iosmacos-0-69
-        run: |
-          npm version --no-git-tag-version ${{ github.ref_name }}
-          npm publish --access public
-        working-directory: ./Package/Assembled-iOSmacOS0.69
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Version & Publish Package @m-szopinski/react-native-iosmacos-0-70
-        run: |
-          npm version --no-git-tag-version ${{ github.ref_name }}
-          npm publish --access public
-        working-directory: ./Package/Assembled-iOSmacOS0.70
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Version & Publish Package @m-szopinski/react-native-iosmacos-0-71
-        run: |
-          npm version --no-git-tag-version ${{ github.ref_name }}
-          npm publish --access public
-        working-directory: ./Package/Assembled-iOSmacOS0.71
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Version & Publish Package @m-szopinski/react-native-basekit-iosmacos-0-69
-        run: |
-          npm version --no-git-tag-version ${{ github.ref_name }}
-          npm publish --access public
-        working-directory: ./Package/Assembled-BaseKit-iOSmacOS0.69
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Version & Publish Package @m-szopinski/react-native-basekit-iosmacos-0-70
-        run: |
-          npm version --no-git-tag-version ${{ github.ref_name }}
-          npm publish --access public
-        working-directory: ./Package/Assembled-BaseKit-iOSmacOS0.70
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Version & Publish Package @m-szopinski/react-native-basekit-iosmacos-0-71
-        run: |
-          npm version --no-git-tag-version ${{ github.ref_name }}
-          npm publish --access public
-        working-directory: ./Package/Assembled-BaseKit-iOSmacOS0.71
+          set -euo pipefail
+          # Publish the main package
+          pushd Assembled
+          npm publish --tag latest --registry https://npm.pkg.github.com
+          popd
+          # Publish the platform-specific packages
+          for dir in Assembled-iOSmacOS*/; do
+            if [ -d "$dir" ]; then
+              pushd "$dir"
+              npm publish --tag latest --registry https://npm.pkg.github.com
+              popd
+            fi
+          done
+        working-directory: ./Package
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
