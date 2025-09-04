@@ -583,13 +583,13 @@ const patchPackageVersion = async () => {
 
         if (basekitBuild)
         {
-          packageJsoniOSAndroid["name"] = "@babylonjs/react-native-basekit-iosmacos" + packageNamePostfix;
+          packageJsoniOSAndroid["name"] = "@m-szopinski/react-native-basekit-iosmacos" + packageNamePostfix;
           // Windows support removed
           // packageJsonWindows["name"] = "@babylonjs/react-native-basekit-windows" + packageNamePostfix;
           delete packageJsoniOSAndroid['peerDependencies']['react-native-permissions'];
           // Windows support removed
         } else {
-          packageJsoniOSAndroid["name"] = "@babylonjs/react-native-iosmacos" + packageNamePostfix;
+          packageJsoniOSAndroid["name"] = "@m-szopinski/react-native-iosmacos" + packageNamePostfix;
           // Windows support removed
         }
         packageJson.peerDependencies['react-native'] = peerDep;
@@ -604,7 +604,9 @@ const patchPackageVersion = async () => {
       const releaseVersion = process.argv[releaseVersionIndex + 1];
       console.log(chalk.black.bgCyan(`Updating Package.json for Release version ${releaseVersion}.`));
       // Windows support removed
-      packageJsoniOSAndroid.peerDependencies["@babylonjs/react-native"] = releaseVersion;
+      packageJsoniOSAndroid.peerDependencies["@m-szopinski/react-native"] = releaseVersion;
+      // Remove any leftover @babylonjs/react-native peer dependency
+      delete packageJsoniOSAndroid.peerDependencies["@babylonjs/react-native"];
     }
 
     fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
