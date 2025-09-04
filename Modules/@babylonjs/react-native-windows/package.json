@@ -1,5 +1,5 @@
 {
-  "name": "@babylonjs/react-native-windows",
+  "name": "@m-szopinski/react-native-windows",
   "title": "React Native Windows Babylon",
   "version": "0.0.1",
   "description": "Babylon Native integration into React Native Windows",
@@ -25,11 +25,14 @@
   "readmeFilename": "README.md",
   "peerDependencies": {
     "@babylonjs/core": ">=5.53.1",
-    "@babylonjs/react-native": "version",
+    "@m-szopinski/react-native": "version",
     "react": ">=17.0.1",
     "react-native": ">=0.69.0 <0.72.0",
     "react-native-permissions": ">=3.0.0",
     "react-native-windows": ">=0.69.0"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
   },
   "devDependencies": {
     "@babel/core": "^7.8.4",
