@@ -21,6 +21,7 @@ Pod::Spec.new do |s|
   s.xcconfig     = { 'USER_HEADER_SEARCH_PATHS' => '$(inherited) ${PODS_TARGET_SRCROOT}/shared ${PODS_TARGET_SRCROOT}/../react-native/shared' }
 
   s.vendored_frameworks = "ios/libs/*.xcframework"
+  s.osx.vendored_libraries = "macos/libs/*.a"
 
   s.ios.frameworks = "MetalKit", "ARKit"
   s.osx.frameworks = "MetalKit"

@@ -571,25 +571,25 @@ const patchPackageVersion = async () => {
 
         let peerDep, packageNamePostfix;
         if (version == '0.69') {
-          peerDep = '>=0.69.0 <0.70.0';
+          peerDep = '>=0.69.0 <0.72.0';  // Support all versions from 0.69 to 0.71
           packageNamePostfix = '-0-69';
         } else if (version == '0.70') {
-          peerDep = '>=0.70.0 <0.71.0';
+          peerDep = '>=0.69.0 <0.72.0';  // Support all versions from 0.69 to 0.71
           packageNamePostfix = '-0-70';
         } else if (version == '0.71') {
-          peerDep = '>=0.71.0 <0.72.0';
+          peerDep = '>=0.69.0 <0.72.0';  // Support all versions from 0.69 to 0.71
           packageNamePostfix = '-0-71';
         }
 
         if (basekitBuild)
         {
-          packageJsoniOSAndroid["name"] = "@m-szopinski/react-native-basekit-iosmacos" + packageNamePostfix;
+          packageJsoniOSAndroid["name"] = "@m-szopinski/react-native-basekit-iosmacos";
           // Windows support removed
           // packageJsonWindows["name"] = "@babylonjs/react-native-basekit-windows" + packageNamePostfix;
           delete packageJsoniOSAndroid['peerDependencies']['react-native-permissions'];
           // Windows support removed
         } else {
-          packageJsoniOSAndroid["name"] = "@m-szopinski/react-native-iosmacos" + packageNamePostfix;
+          packageJsoniOSAndroid["name"] = "@m-szopinski/react-native-iosmacos";
           // Windows support removed
         }
         packageJson.peerDependencies['react-native'] = peerDep;
