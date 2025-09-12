@@ -10,14 +10,15 @@ Pod::Spec.new do |s|
   s.license      = package["license"]
   s.authors      = package["author"]
 
-  s.platforms    = { :ios => "12.0" }
+  s.platforms    = { :ios => "12.0", :osx => "10.15" }
   s.source       = { :git => package["repository"]["url"], :tag => s.version }
 
-  s.source_files = "ios/**/*.{h,m,mm}"
+  s.ios.source_files = "ios/**/*.{h,m,mm}"
+  s.osx.source_files = "macos/**/*.{h,m,mm}"
   s.requires_arc = true
   s.xcconfig     = { 'USER_HEADER_SEARCH_PATHS' => '$(inherited) ${PODS_TARGET_SRCROOT}/shared ${PODS_TARGET_SRCROOT}/../react-native/shared' }
 
-  s.vendored_libraries = 'ios/libs/libastc-encoder.a',
+  s.ios.vendored_libraries = 'ios/libs/libastc-encoder.a',
     'ios/libs/libBabylonNative.a',
     'ios/libs/libbgfx.a',
     'ios/libs/libbimg.a',
@@ -47,7 +48,10 @@ Pod::Spec.new do |s|
     'ios/libs/libWindow.a',
     'ios/libs/libXMLHttpRequest.a'
 
-  s.frameworks = "MetalKit"
+  s.osx.vendored_libraries = 'macos/libs/*.a'
+
+  s.ios.frameworks = "MetalKit"
+  s.osx.frameworks = "MetalKit"
 
   s.dependency "React"
 end

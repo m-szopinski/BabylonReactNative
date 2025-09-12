@@ -1,9 +1,18 @@
 {
-  "name": "@m-szopinski/react-native-iosmacos-0-71",
+  "name": "@m-szopinski/react-native-iosmacos",
   "title": "React Native Babylon for iOS, macOS and Android",
   "version": "0.0.1",
   "description": "Babylon Native integration into React Native",
   "main": "index.ts",
+  "files": [
+    "index.ts",
+    "ios/",
+    "macos/",
+    "android/",
+    "shared/",
+    "react-native-babylon.podspec",
+    "README.md"
+  ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -28,9 +37,9 @@
     "semver": "^7.3.2"
   },
   "peerDependencies": {
-    "@m-szopinski/react-native": "test-0.0.1",
+    "@m-szopinski/react-native": "^0.0.1",
     "react": "*",
-    "react-native": ">=0.71.0 <0.72.0",
+    "react-native": ">=0.69.0 <0.72.0",
     "react-native-permissions": ">=3.0.0"
   },
   "publishConfig": {
