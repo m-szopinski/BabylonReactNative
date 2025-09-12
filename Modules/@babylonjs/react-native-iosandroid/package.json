@@ -37,7 +37,7 @@
     "semver": "^7.3.2"
   },
   "peerDependencies": {
-    "@m-szopinski/react-native": "test-0.0.1",
+    "@m-szopinski/react-native": "^0.0.1",
     "react": "*",
     "react-native": ">=0.69.0 <0.72.0",
     "react-native-permissions": ">=3.0.0"
